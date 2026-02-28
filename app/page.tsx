@@ -52,6 +52,7 @@ export default function HomePage() {
   } | null>(null);
   const [emailColumn, setEmailColumn] = useState<string>("");
   const [selectedFields, setSelectedFields] = useState<EnrichmentField[]>([]);
+  const [tickerOverrides, setTickerOverrides] = useState<Record<string, string> | undefined>(undefined);
   const [isCheckingEnv, setIsCheckingEnv] = useState(true);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [firecrawlApiKey, setFirecrawlApiKey] = useState<string>("");
@@ -129,9 +130,10 @@ export default function HomePage() {
     }
   };
 
-  const handleStartEnrichment = (email: string, fields: EnrichmentField[]) => {
+  const handleStartEnrichment = (email: string, fields: EnrichmentField[], overrides?: Record<string, string>) => {
     setEmailColumn(email);
     setSelectedFields(fields);
+    setTickerOverrides(overrides);
     setStep("enrichment");
   };
 
@@ -232,6 +234,9 @@ export default function HomePage() {
                 <HeaderBrandKit />
               </div>
               <div className="flex gap-8">
+                <Link href="/docs">
+                  <ButtonUI variant="tertiary">Documentation</ButtonUI>
+                </Link>
                 <a
                   className="contents"
                   href="https://github.com/firecrawl/fire-enrich"
@@ -251,6 +256,9 @@ export default function HomePage() {
                   <HeaderBrandKit />
                 </div>
                 <div className="flex gap-8">
+                  <Link href="/docs">
+                    <ButtonUI variant="tertiary">Documentation</ButtonUI>
+                  </Link>
                   <a
                     className="contents"
                     href="https://github.com/firecrawl/fire-enrich"
@@ -365,6 +373,7 @@ export default function HomePage() {
                         rows={csvData.rows}
                         fields={selectedFields}
                         emailColumn={emailColumn}
+                        tickerOverrides={tickerOverrides}
                       />
                     </motion.div>
                   )}

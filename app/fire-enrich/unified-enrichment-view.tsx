@@ -33,7 +33,7 @@ import { AlertCircle } from "lucide-react";
 interface UnifiedEnrichmentViewProps {
   rows: CSVRow[];
   columns: string[];
-  onStartEnrichment: (emailColumn: string, fields: EnrichmentField[]) => void;
+  onStartEnrichment: (emailColumn: string, fields: EnrichmentField[], tickerOverrides?: Record<string, string>) => void;
 }
 
 const PRESET_FIELDS: EnrichmentField[] = [
@@ -125,6 +125,8 @@ export function UnifiedEnrichmentView({
   const [showAllRows, setShowAllRows] = useState(false);
   const [showEmailDropdown, setShowEmailDropdown] = useState(false);
   const [showEmailDropdownStep1, setShowEmailDropdownStep1] = useState(false);
+  const [tickerOverrides, setTickerOverrides] = useState<Array<{ key: string; ticker: string }>>([]);
+  const [showTickerOverrides, setShowTickerOverrides] = useState(false);
   const [customField, setCustomField] = useState<{
     name: string;
     description: string;
@@ -846,6 +848,82 @@ export function UnifiedEnrichmentView({
               </Card>
             )}
 
+            {/* Ticker Overrides Section */}
+            {selectedFields.some(f => {
+              const text = `${f.name} ${f.description}`.toLowerCase();
+              return text.includes('ticker') || text.includes('stock symbol');
+            }) && (
+              <Card className="p-16 border-gray-200 bg-white rounded-8">
+                <button
+                  onClick={() => setShowTickerOverrides(!showTickerOverrides)}
+                  className="w-full flex items-center justify-between text-left transition-colors"
+                >
+                  <div>
+                    <span className="text-body-medium font-semibold text-gray-900">
+                      Ticker overrides{" "}
+                      <span className="text-gray-400 font-normal">(optional)</span>
+                    </span>
+                    {tickerOverrides.length > 0 && (
+                      <span className="ml-8 text-body-small text-gray-500">
+                        {tickerOverrides.length} override{tickerOverrides.length !== 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </div>
+                  {showTickerOverrides ? (
+                    <ChevronUp size={14} className="text-gray-600" />
+                  ) : (
+                    <ChevronDown size={14} className="text-gray-600" />
+                  )}
+                </button>
+
+                {showTickerOverrides && (
+                  <div className="mt-12 space-y-8">
+                    <p className="text-body-medium text-gray-500">
+                      Map a company name or domain to a ticker symbol. These rows skip the resolver entirely.
+                    </p>
+                    {tickerOverrides.map((entry, idx) => (
+                      <div key={idx} className="flex items-center gap-6">
+                        <Input
+                          placeholder="Company or domain"
+                          value={entry.key}
+                          onChange={(e) => {
+                            const updated = [...tickerOverrides];
+                            updated[idx] = { ...updated[idx], key: e.target.value };
+                            setTickerOverrides(updated);
+                          }}
+                          className="flex-1 border-gray-200 focus:border-gray-400 bg-white text-body-small h-32"
+                        />
+                        <span className="text-gray-400">→</span>
+                        <Input
+                          placeholder="TICKER"
+                          value={entry.ticker}
+                          onChange={(e) => {
+                            const updated = [...tickerOverrides];
+                            updated[idx] = { ...updated[idx], ticker: e.target.value.toUpperCase() };
+                            setTickerOverrides(updated);
+                          }}
+                          className="w-[100px] border-gray-200 focus:border-gray-400 bg-white text-body-small h-32 uppercase"
+                        />
+                        <button
+                          onClick={() => setTickerOverrides(tickerOverrides.filter((_, i) => i !== idx))}
+                          className="text-gray-400 hover:text-gray-700 transition-colors"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => setTickerOverrides([...tickerOverrides, { key: "", ticker: "" }])}
+                      className="flex items-center gap-4 text-body-medium text-gray-600 hover:text-gray-900 transition-colors"
+                    >
+                      <Plus size={14} />
+                      Add override
+                    </button>
+                  </div>
+                )}
+              </Card>
+            )}
+
             {/* Navigation Buttons */}
             <div className="flex justify-between pt-16">
               <button
@@ -856,7 +934,19 @@ export function UnifiedEnrichmentView({
                 Back
               </button>
               <button
-                onClick={() => onStartEnrichment(emailColumn, selectedFields)}
+                onClick={() => {
+                  const overridesRecord: Record<string, string> = {};
+                  for (const { key, ticker } of tickerOverrides) {
+                    const k = key.trim().toLowerCase();
+                    const t = ticker.trim();
+                    if (k && t) overridesRecord[k] = t;
+                  }
+                  onStartEnrichment(
+                    emailColumn,
+                    selectedFields,
+                    Object.keys(overridesRecord).length > 0 ? overridesRecord : undefined,
+                  );
+                }}
                 disabled={selectedFields.length === 0}
                 className="rounded-8 px-10 py-6 gap-4 text-body-medium text-accent-black bg-black-alpha-4 hover:bg-black-alpha-6 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
               >

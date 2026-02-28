@@ -11,6 +11,8 @@ export async function enrichStockTickerFields(
   rowResult: RowEnrichmentResult,
   firecrawlApiKey: string,
   openaiApiKey: string,
+  tickerOverrides?: Record<string, string>,
+  openaiBaseUrl?: string,
 ): Promise<Record<string, EnrichmentResult>> {
   const tickerFields = fields.filter(isStockTickerField);
   if (tickerFields.length === 0) return {};
@@ -29,10 +31,33 @@ export async function enrichStockTickerFields(
   );
   const domain = emailValue ? emailValue.split('@')[1] : undefined;
 
+  // Check ticker overrides before calling the resolver
+  if (tickerOverrides && Object.keys(tickerOverrides).length > 0) {
+    const companyKey = companyName?.toLowerCase().trim();
+    const domainKey = domain?.toLowerCase().trim();
+    const overrideTicker =
+      (companyKey && tickerOverrides[companyKey]) ||
+      (domainKey && tickerOverrides[domainKey]);
+
+    if (overrideTicker) {
+      const output: Record<string, EnrichmentResult> = {};
+      for (const field of tickerFields) {
+        output[field.name] = {
+          field: field.name,
+          value: overrideTicker.toUpperCase(),
+          confidence: 1,
+          source: 'user-override',
+        };
+      }
+      return output;
+    }
+  }
+
   const resolved = await resolveStockTicker(
     { companyName, domain },
     firecrawlApiKey,
     openaiApiKey,
+    openaiBaseUrl,
   );
 
   if (!resolved) return {};

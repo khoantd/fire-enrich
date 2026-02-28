@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { FirecrawlService } from '../../services/firecrawl';
+import { getOpenAIModelMini } from '../../config/openai';
 import type { StockTickerContext, StockTickerEnrichmentResult } from './types';
 
 const TICKER_REGEX = /^[A-Z]{1,5}$/;
@@ -18,12 +19,16 @@ export async function resolveStockTicker(
   context: StockTickerContext,
   firecrawlApiKey: string,
   openaiApiKey: string,
+  openaiBaseUrl?: string,
 ): Promise<StockTickerEnrichmentResult | null> {
   const { companyName, domain } = context;
   if (!companyName && !domain) return null;
 
   const firecrawl = new FirecrawlService(firecrawlApiKey);
-  const openai = new OpenAI({ apiKey: openaiApiKey });
+  const openai = new OpenAI({
+    apiKey: openaiApiKey,
+    ...(openaiBaseUrl && { baseURL: openaiBaseUrl }),
+  });
 
   // 1. Search
   const searchTerm = companyName ? `"${companyName}"` : domain!;
@@ -46,7 +51,7 @@ export async function resolveStockTicker(
   // 3. Extract via OpenAI
   const subject = companyName || domain;
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: getOpenAIModelMini(),
     messages: [
       {
         role: 'system',

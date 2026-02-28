@@ -34,12 +34,14 @@ interface EnrichmentTableProps {
   rows: CSVRow[];
   fields: EnrichmentField[];
   emailColumn?: string;
+  tickerOverrides?: Record<string, string>;
 }
 
 export function EnrichmentTable({
   rows,
   fields,
   emailColumn,
+  tickerOverrides,
 }: EnrichmentTableProps) {
   const [results, setResults] = useState<Map<number, RowEnrichmentResult>>(
     new Map(),
@@ -141,6 +143,7 @@ export function EnrichmentTable({
           emailColumn,
           useAgents,
           useV2Architecture: true, // Use new agent architecture when agents are enabled
+          ...(tickerOverrides && Object.keys(tickerOverrides).length > 0 ? { tickerOverrides } : {}),
         }),
       });
 

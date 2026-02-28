@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: EnrichmentRequest = await request.json();
-    const { rows, fields, emailColumn, nameColumn } = body;
+    const { rows, fields, emailColumn, nameColumn, tickerOverrides } = body;
 
     if (!rows || rows.length === 0) {
       return NextResponse.json(
@@ -53,11 +53,17 @@ export async function POST(request: NextRequest) {
     // Check environment variables and headers for API keys
     const openaiApiKey = process.env.OPENAI_API_KEY || request.headers.get('X-OpenAI-API-Key');
     const firecrawlApiKey = process.env.FIRECRAWL_API_KEY || request.headers.get('X-Firecrawl-API-Key');
-    
+    // LiteLLM or any OpenAI-compatible proxy (env or header)
+    const openaiBaseUrl =
+      process.env.OPENAI_BASE_URL ||
+      process.env.LITELLM_PROXY_URL ||
+      request.headers.get('X-OpenAI-Base-URL') ||
+      undefined;
+
     if (!openaiApiKey || !firecrawlApiKey) {
-      console.error('Missing API keys:', { 
-        hasOpenAI: !!openaiApiKey, 
-        hasFirecrawl: !!firecrawlApiKey 
+      console.error('Missing API keys:', {
+        hasOpenAI: !!openaiApiKey,
+        hasFirecrawl: !!firecrawlApiKey,
       });
       return NextResponse.json(
         { error: 'Server configuration error: Missing API keys' },
@@ -67,11 +73,12 @@ export async function POST(request: NextRequest) {
 
     // Always use the advanced agent architecture
     const strategyName = 'AgentEnrichmentStrategy';
-    
+
     console.log(`[STRATEGY] Using ${strategyName} - Advanced multi-agent architecture with specialized agents`);
     const enrichmentStrategy = new AgentEnrichmentStrategy(
       openaiApiKey,
-      firecrawlApiKey
+      firecrawlApiKey,
+      openaiBaseUrl ?? undefined
     );
 
     // Load skip list
@@ -181,7 +188,8 @@ export async function POST(request: NextRequest) {
                       })}\n\n`
                     )
                   );
-                }
+                },
+                { tickerOverrides }
               );
               result.rowIndex = i; // Set the correct row index
 

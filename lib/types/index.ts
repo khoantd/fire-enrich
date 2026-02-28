@@ -17,6 +17,7 @@ export interface EnrichmentRequest {
   nameColumn?: string;
   useAgents?: boolean;
   useV2Architecture?: boolean;
+  tickerOverrides?: Record<string, string>;
 }
 
 export interface SearchResult {

@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 import { FieldGenerationResponse } from '@/lib/types/field-generation';
+import { getOpenAIModel } from '@/lib/config/openai';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,12 +23,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const baseURL =
+      process.env.OPENAI_BASE_URL ||
+      process.env.LITELLM_PROXY_URL ||
+      undefined;
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
+      ...(baseURL && { baseURL }),
     });
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-5',
+      model: getOpenAIModel(),
       messages: [
         {
           role: 'system',

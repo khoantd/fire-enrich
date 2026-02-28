@@ -21,6 +21,11 @@ export async function POST(request: NextRequest) {
     // Get API keys
     const openaiApiKey = process.env.OPENAI_API_KEY || request.headers.get('X-OpenAI-API-Key');
     const firecrawlApiKey = process.env.FIRECRAWL_API_KEY || request.headers.get('X-Firecrawl-API-Key');
+    const openaiBaseUrl =
+      process.env.OPENAI_BASE_URL ||
+      process.env.LITELLM_PROXY_URL ||
+      request.headers.get('X-OpenAI-Base-URL') ||
+      undefined;
 
     if (!openaiApiKey || !firecrawlApiKey) {
       return NextResponse.json(
@@ -35,7 +40,7 @@ export async function POST(request: NextRequest) {
     activeQueries.set(queryId, abortController);
 
     const firecrawl = new FirecrawlService(firecrawlApiKey);
-    const openai = new OpenAIService(openaiApiKey);
+    const openai = new OpenAIService(openaiApiKey, openaiBaseUrl ?? undefined);
 
     // Create streaming response
     const encoder = new TextEncoder();

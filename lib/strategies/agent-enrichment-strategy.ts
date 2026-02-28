@@ -7,14 +7,17 @@ export class AgentEnrichmentStrategy {
   private orchestrator: AgentOrchestrator;
   private firecrawlApiKey: string;
   private openaiApiKey: string;
+  private openaiBaseUrl?: string;
 
   constructor(
     openaiApiKey: string,
     firecrawlApiKey: string,
+    openaiBaseUrl?: string,
   ) {
-    this.orchestrator = new AgentOrchestrator(firecrawlApiKey, openaiApiKey);
+    this.orchestrator = new AgentOrchestrator(firecrawlApiKey, openaiApiKey, openaiBaseUrl);
     this.firecrawlApiKey = firecrawlApiKey;
     this.openaiApiKey = openaiApiKey;
+    this.openaiBaseUrl = openaiBaseUrl;
   }
   
   async enrichRow(
@@ -22,7 +25,8 @@ export class AgentEnrichmentStrategy {
     fields: EnrichmentField[],
     emailColumn: string,
     onProgress?: (field: string, value: unknown) => void,
-    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void
+    onAgentProgress?: (message: string, type: 'info' | 'success' | 'warning' | 'agent') => void,
+    options?: { tickerOverrides?: Record<string, string> }
   ): Promise<RowEnrichmentResult> {
     const email = row[emailColumn];
     console.log(`[AgentEnrichmentStrategy] Starting enrichment for email: ${email}`);
@@ -70,6 +74,8 @@ export class AgentEnrichmentStrategy {
         result,
         this.firecrawlApiKey,
         this.openaiApiKey,
+        options?.tickerOverrides,
+        this.openaiBaseUrl,
       );
       if (Object.keys(tickerEnrichments).length > 0) {
         Object.assign(result.enrichments, tickerEnrichments);
