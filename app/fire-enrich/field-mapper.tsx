@@ -63,6 +63,13 @@ const PRESET_FIELDS: Omit<EnrichmentField, "name">[] = [
     type: "string",
     required: false,
   },
+  {
+    displayName: "Stock Ticker",
+    description:
+      "Stock ticker symbol for the company (e.g. AAPL, MSFT). Listed on NASDAQ, NYSE, or other exchange.",
+    type: "string",
+    required: false,
+  },
 ];
 
 export function FieldMapper({ onFieldsSelected }: FieldMapperProps) {

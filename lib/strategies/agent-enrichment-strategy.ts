@@ -1,15 +1,20 @@
 import { AgentOrchestrator } from '../agent-architecture';
 import type { CSVRow, EnrichmentField, RowEnrichmentResult, EnrichmentResult } from '../types';
 import { shouldSkipEmail, loadSkipList, getSkipReason } from '../utils/skip-list';
+import { enrichStockTickerFields } from '../extensions/stock-ticker';
 
 export class AgentEnrichmentStrategy {
   private orchestrator: AgentOrchestrator;
-  
+  private firecrawlApiKey: string;
+  private openaiApiKey: string;
+
   constructor(
     openaiApiKey: string,
     firecrawlApiKey: string,
   ) {
     this.orchestrator = new AgentOrchestrator(firecrawlApiKey, openaiApiKey);
+    this.firecrawlApiKey = firecrawlApiKey;
+    this.openaiApiKey = openaiApiKey;
   }
   
   async enrichRow(
@@ -59,6 +64,17 @@ export class AgentEnrichmentStrategy {
         onAgentProgress
       );
       
+      // Stock ticker extension: run after orchestrator, merge results
+      const tickerEnrichments = await enrichStockTickerFields(
+        fields,
+        result,
+        this.firecrawlApiKey,
+        this.openaiApiKey,
+      );
+      if (Object.keys(tickerEnrichments).length > 0) {
+        Object.assign(result.enrichments, tickerEnrichments);
+      }
+
       // Filter out null values to match the expected type
       const filteredEnrichments: Record<string, EnrichmentResult> = {};
       for (const [key, enrichment] of Object.entries(result.enrichments)) {
@@ -66,10 +82,10 @@ export class AgentEnrichmentStrategy {
           filteredEnrichments[key] = enrichment as EnrichmentResult;
         }
       }
-      
+
       const enrichedCount = Object.keys(filteredEnrichments).length;
       console.log(`[AgentEnrichmentStrategy] Orchestrator returned ${enrichedCount} enriched fields`);
-      
+
       return {
         ...result,
         enrichments: filteredEnrichments

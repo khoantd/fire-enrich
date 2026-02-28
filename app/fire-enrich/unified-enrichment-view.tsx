@@ -94,6 +94,14 @@ const PRESET_FIELDS: EnrichmentField[] = [
     type: "string",
     required: false,
   },
+  {
+    name: "stockTicker",
+    displayName: "Stock Ticker",
+    description:
+      "Stock ticker symbol for the company (e.g. AAPL, MSFT). Listed on NASDAQ, NYSE, or other exchange.",
+    type: "string",
+    required: false,
+  },
 ];
 
 export function UnifiedEnrichmentView({
